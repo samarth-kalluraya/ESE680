@@ -68,7 +68,7 @@ PurePursuit() {
   m.getRPY(roll,pitch,yaw);
 
 
-  ifstream waypoints("/home/samarth/samarth_ws/src/f110-fall2019-skeletons/SLAX_pure_pursuit/test.csv");
+  ifstream waypoints("/home/samarth/samarth_ws/src/f110-fall2019-skeletons/final_project/ESE680/pure_pursuit_star/test.csv");
 
   double shortest = DBL_MAX;
   double best_x;
