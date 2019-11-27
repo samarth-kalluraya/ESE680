@@ -39,7 +39,7 @@ private:
   string emp;
   double flo_x;
   double flo_y;
-  double L = 1.6;  //0.8 works 1.4   1.6
+  double L = 0.5;  //0.8 works 1.4   1.6
   double P = 0.22;  //0.21   0.22
   int k = 0;
   int flag = 0;
