@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(pure_pursuit)
+project(pure_pursuit_star)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 add_compile_options(-std=c++11)
@@ -138,8 +138,8 @@ include_directories(
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/pure_pursuit_node.cpp)
- add_executable(pure_pursuit src/pure_pursuit.cpp)
- target_link_libraries(pure_pursuit ${catkin_LIBRARIES})
+ add_executable(pure_pursuit_star src/pure_pursuit_star.cpp)
+ target_link_libraries(pure_pursuit_star ${catkin_LIBRARIES})
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
