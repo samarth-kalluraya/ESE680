@@ -11,6 +11,7 @@
 #include <ackermann_msgs/AckermannDriveStamped.h>
 #include <ackermann_msgs/AckermannDrive.h>
 #include <visualization_msgs/Marker.h>
+#include <boost/algorithm/string.hpp>
 
 
 using namespace std;
@@ -26,7 +27,9 @@ private:
 
   visualization_msgs::Marker marker;
   visualization_msgs::Marker path_line;
-
+  
+  std::vector<std::vector<std::string> > dataList;
+  vector<vector<float>> data_int;
 
   double car_pos_x;
   double car_pos_y;
@@ -39,7 +42,7 @@ private:
   string emp;
   double flo_x;
   double flo_y;
-  double L = 0.5;  //0.8 works 1.4   1.6
+  double L = 1.4;  //0.8 works 1.4   1.6
   double P = 0.22;  //0.21   0.22
   int k = 0;
   int flag = 0;
@@ -55,7 +58,41 @@ PurePursuit() {
   // TODO: create ROS subscribers and publishers
 }
 
-  void pose_callback(const nav_msgs::Odometry::ConstPtr &pose_msg) {
+void GetWaypoints(){
+  // File pointer
+  std::ifstream myfile;
+  myfile.open("/home/samarth/samarth_ws/src/f110-fall2019-skeletons/final_project/ESE680/pure_pursuit_star/test.csv");
+
+  ///home/xinlong/XinlongZheng_ws/src/vision/src/vehicle_tracker_prediction_skeleton/waypoints
+  string line;
+  string delimeter = ",";
+
+  if (myfile.is_open())
+  {
+    while ( getline (myfile,line) )
+    {
+      //  cout << "du le ma" << endl;
+      std::vector<std::string> vec;
+      boost::algorithm::split(vec, line, boost::is_any_of(delimeter));
+      dataList.push_back(vec);
+    }
+    myfile.close();
+  }
+
+  unsigned long size = dataList.size();
+
+  data_int = vector<vector<float>> (size, vector<float> (3, 0));
+
+  for(unsigned int i = 0; i < size; i ++){
+    for (unsigned int r = 0; r<3; r++){
+      // cout<<(stof(dataList[i][r]));
+      data_int[i][r] = stof(dataList[i][r]);
+    }
+  }
+
+}
+
+void pose_callback(const nav_msgs::Odometry::ConstPtr &pose_msg) {
 
   car_pos_x = (pose_msg->pose).pose.position.x;
   car_pos_y = (pose_msg->pose).pose.position.y;
@@ -68,7 +105,6 @@ PurePursuit() {
   m.getRPY(roll,pitch,yaw);
 
 
-  ifstream waypoints("/home/samarth/samarth_ws/src/f110-fall2019-skeletons/final_project/ESE680/pure_pursuit_star/test.csv");
 
   double shortest = DBL_MAX;
   double best_x;
@@ -99,36 +135,29 @@ PurePursuit() {
     path_line.color.g = 0.0;
     path_line.color.b = 1.0;
   }
-  while(waypoints.good()){
-    count++;
-    getline(waypoints,waypoint_x,',');
-    getline(waypoints,waypoint_y,',');
-    getline(waypoints,rot,',');
-    getline(waypoints,emp,'\n');
-    stringstream xx(waypoint_x);
-    stringstream yy(waypoint_y);
-    xx >> flo_x;
-    yy >> flo_y;
-    x_car_frame = (flo_x-car_pos_x)*cos(yaw) + (flo_y-car_pos_y)*sin(yaw);
-    y_car_frame = -(flo_x-car_pos_x)*sin(yaw) + (flo_y-car_pos_y)*cos(yaw);
+
+  for(int i=0; i<data_int.size(); i++){
+    x_car_frame = (data_int[i][0]-car_pos_x)*cos(yaw) + (data_int[i][1]-car_pos_y)*sin(yaw);
+    y_car_frame = -(data_int[i][0]-car_pos_x)*sin(yaw) + (data_int[i][1]-car_pos_y)*cos(yaw);
     dis = abs(sqrt(x_car_frame*x_car_frame + y_car_frame*y_car_frame)-L);
 
     if (x_car_frame>L/2 && dis < shortest){
       shortest = dis;
-      mark_x = flo_x;
-      mark_y = flo_y;
+      mark_x = data_int[i][0];
+      mark_y = data_int[i][1];
       best_x = x_car_frame;
       best_y = y_car_frame;
     }
     if ( flag==0){
       geometry_msgs::Point p;
-      p.x = flo_x;
-      p.y = flo_y;
+      p.x = data_int[i][0];
+      p.y = data_int[i][1];
       p.z = 0;
       path_line.points.push_back(p);
       //  marker.lifetime = ros::Duration(0.01);
     }
   }
+  
   if (flag ==0)
   marker_pub.publish(path_line);
   flag = 1;
@@ -181,7 +210,6 @@ PurePursuit() {
 
   drive_pub.publish(drive_msg);
 
-  waypoints.close();
 
 
 
@@ -199,6 +227,7 @@ PurePursuit() {
 int main(int argc, char ** argv) {
     ros::init(argc, argv, "pure_pursuit_node");
     PurePursuit pp;
+    pp.GetWaypoints();
     ros::spin();
     return 0;
 }
