@@ -50,7 +50,7 @@ public:
 PurePursuit() {
   n = ros::NodeHandle();
   pose_sub = n.subscribe("/pf/pose/odom", 1000, &PurePursuit::pose_callback,this);
-  drive_pub = n.advertise<ackermann_msgs::AckermannDriveStamped>("/vesc/high_level/ackermann_cmd_mux/input/nav_1", 10);
+  drive_pub = n.advertise<ackermann_msgs::AckermannDriveStamped>("/drive", 10);
   marker_pub = n.advertise<visualization_msgs::Marker>("visualization_marker", 100);
   // TODO: create ROS subscribers and publishers
 }
