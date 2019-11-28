@@ -42,7 +42,7 @@ private:
   string emp;
   double flo_x;
   double flo_y;
-  double L = 1.4;  //0.8 works 1.4   1.6
+  double L = 0.6;  //0.8 works 1.4   1.6
   double P = 0.22;  //0.21   0.22
   int k = 0;
   int flag = 0;
@@ -156,7 +156,7 @@ void pose_callback(const nav_msgs::Odometry::ConstPtr &pose_msg) {
 
     for(int m=0; m<L_velocity.size(); m++){
       dis = abs(sqrt(x_car_frame*x_car_frame + y_car_frame*y_car_frame)-L_velocity[m]);
-      if (x_car_frame>L_velocity[m] && dis < shortest_vel[m]){
+      if (x_car_frame>(L_velocity[m]/2) && dis < shortest_vel[m]){
         shortest_vel[m] = dis;
         future_velocities[m] = data_int[i][3];
       }
@@ -210,11 +210,11 @@ void pose_callback(const nav_msgs::Odometry::ConstPtr &pose_msg) {
   double arc =  2*best_y/L_square;
   double angle = P*arc;
   // cout << "x" << x_car_frame << endl;
-  // for(int m=0; m<L_velocity.size(); m++){
-  //   cout<<future_velocities[m]<<", ";
+  for(int m=0; m<L_velocity.size(); m++){
+    cout<<future_velocities[m]<<", ";
     
-  // }
-  // cout<<"\n";
+  }
+  cout<<"\n";
   // cout << "y" << y_car_frame << endl;
   // cout << "angle" << angle << endl;
   // cout << angle <<endl;
