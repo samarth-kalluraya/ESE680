@@ -47,6 +47,9 @@ private:
   int k = 0;
   int flag = 0;
 
+  vector<float> L_velocity = {0.5,1,1.5,2}; //velocity lookahead distances
+  double velocity_gamma = 1;
+
   // TODO: create ROS subscribers and publishers
 
 public:
@@ -61,7 +64,7 @@ PurePursuit() {
 void GetWaypoints(){
   // File pointer
   std::ifstream myfile;
-  myfile.open("/home/samarth/samarth_ws/src/f110-fall2019-skeletons/final_project/ESE680/pure_pursuit_star/test.csv");
+  myfile.open("/home/samarth/samarth_ws/src/f110-fall2019-skeletons/final_project/ESE680/pure_pursuit_star/levine_processed.csv");
 
   ///home/xinlong/XinlongZheng_ws/src/vision/src/vehicle_tracker_prediction_skeleton/waypoints
   string line;
@@ -81,10 +84,10 @@ void GetWaypoints(){
 
   unsigned long size = dataList.size();
 
-  data_int = vector<vector<float>> (size, vector<float> (3, 0));
+  data_int = vector<vector<float>> (size, vector<float> (4, 0));
 
   for(unsigned int i = 0; i < size; i ++){
-    for (unsigned int r = 0; r<3; r++){
+    for (unsigned int r = 0; r<4; r++){
       // cout<<(stof(dataList[i][r]));
       data_int[i][r] = stof(dataList[i][r]);
     }
@@ -113,7 +116,18 @@ void pose_callback(const nav_msgs::Odometry::ConstPtr &pose_msg) {
   double x_car_frame;
   double mark_x;
   double mark_y;
+  double mark_x1;
+  double mark_y1;
   double y_car_frame;
+  double temp_i;
+
+  vector<double> shortest_vel;
+  for(int i=0; i<L_velocity.size(); i++){
+    shortest_vel.push_back(DBL_MAX);
+  }
+  vector<double> future_velocities(L_velocity.size());
+
+
   int count = 0;
   if(flag == 0){
     path_line.header.frame_id = "/map";
@@ -139,8 +153,16 @@ void pose_callback(const nav_msgs::Odometry::ConstPtr &pose_msg) {
   for(int i=0; i<data_int.size(); i++){
     x_car_frame = (data_int[i][0]-car_pos_x)*cos(yaw) + (data_int[i][1]-car_pos_y)*sin(yaw);
     y_car_frame = -(data_int[i][0]-car_pos_x)*sin(yaw) + (data_int[i][1]-car_pos_y)*cos(yaw);
-    dis = abs(sqrt(x_car_frame*x_car_frame + y_car_frame*y_car_frame)-L);
 
+    for(int m=0; m<L_velocity.size(); m++){
+      dis = abs(sqrt(x_car_frame*x_car_frame + y_car_frame*y_car_frame)-L_velocity[m]);
+      if (x_car_frame>L_velocity[m] && dis < shortest_vel[m]){
+        shortest_vel[m] = dis;
+        future_velocities[m] = data_int[i][3];
+      }
+    }
+
+    dis = abs(sqrt(x_car_frame*x_car_frame + y_car_frame*y_car_frame)-L);    
     if (x_car_frame>L/2 && dis < shortest){
       shortest = dis;
       mark_x = data_int[i][0];
@@ -187,18 +209,30 @@ void pose_callback(const nav_msgs::Odometry::ConstPtr &pose_msg) {
   double L_square = best_x*best_x+best_y*best_y;
   double arc =  2*best_y/L_square;
   double angle = P*arc;
-  cout << "x" << x_car_frame << endl;
-  cout << "y" << y_car_frame << endl;
-  cout << "angle" << angle << endl;
+  // cout << "x" << x_car_frame << endl;
+  // for(int m=0; m<L_velocity.size(); m++){
+  //   cout<<future_velocities[m]<<", ";
+    
+  // }
+  // cout<<"\n";
+  // cout << "y" << y_car_frame << endl;
+  // cout << "angle" << angle << endl;
   // cout << angle <<endl;
-  double velocity = 5;
-  if(abs(angle*180/M_PI) <5){
-    velocity = 4.5;
-  }else if(abs(angle*180/M_PI) <8){
-    velocity = 1.3;
-  }else{
-    velocity = 0.5; //1
+  double velocity = 0;
+  // if(abs(angle*180/M_PI) <5){
+  //   velocity = 4.5;
+  // }else if(abs(angle*180/M_PI) <8){
+  //   velocity = 1.3;
+  // }else{
+  //   velocity = 0.5; //1
+  // }
+  for(int m=0; m<future_velocities.size(); m++){
+    velocity=velocity + pow(velocity_gamma,m)*future_velocities[m];
   }
+  velocity=velocity/future_velocities.size();
+  cout<<velocity<<"\n";
+
+
   if(angle >0.42)
     angle = 0.42;
   if(angle <-0.42)
