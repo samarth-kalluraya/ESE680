@@ -42,8 +42,11 @@ private:
   string emp;
   double flo_x;
   double flo_y;
-  double L = 1.4;  //0.8 works 1.4   1.6
+  double L = 0.6 ;  //0.8 works 1.4   1.6
   double P = 0.22;  //0.21   0.22
+
+  double understeer_gain = 4;  //0.21   0.22
+
   int k = 0;
   int flag = 0;
 
@@ -107,9 +110,11 @@ void pose_callback(const nav_msgs::Odometry::ConstPtr &pose_msg) {
   double roll,pitch,yaw;
   m.getRPY(roll,pitch,yaw);
 
-
+  double closest_x;
+  double closest_y;
 
   double shortest = DBL_MAX;
+  double closest_wp_dis = DBL_MAX;
   double best_x;
   double best_y;
   double dis;
@@ -153,6 +158,13 @@ void pose_callback(const nav_msgs::Odometry::ConstPtr &pose_msg) {
   for(int i=0; i<data_int.size(); i++){
     x_car_frame = (data_int[i][0]-car_pos_x)*cos(yaw) + (data_int[i][1]-car_pos_y)*sin(yaw);
     y_car_frame = -(data_int[i][0]-car_pos_x)*sin(yaw) + (data_int[i][1]-car_pos_y)*cos(yaw);
+
+    dis = sqrt(x_car_frame*x_car_frame + y_car_frame*y_car_frame);
+    if (dis < closest_wp_dis){
+      closest_wp_dis = abs(dis);
+      closest_x= data_int[i][0];
+      closest_y= data_int[i][1];
+    }
 
     for(int m=0; m<L_velocity.size(); m++){
       dis = abs(sqrt(x_car_frame*x_car_frame + y_car_frame*y_car_frame)-L_velocity[m]);
@@ -210,11 +222,11 @@ void pose_callback(const nav_msgs::Odometry::ConstPtr &pose_msg) {
   double arc =  2*best_y/L_square;
   double angle = P*arc;
   // cout << "x" << x_car_frame << endl;
-  // for(int m=0; m<L_velocity.size(); m++){
-  //   cout<<future_velocities[m]<<", ";
+  for(int m=0; m<L_velocity.size(); m++){
+    cout<<future_velocities[m]<<", ";
     
-  // }
-  // cout<<"\n";
+  }
+  cout<<"\n";
   // cout << "y" << y_car_frame << endl;
   // cout << "angle" << angle << endl;
   // cout << angle <<endl;
@@ -230,6 +242,11 @@ void pose_callback(const nav_msgs::Odometry::ConstPtr &pose_msg) {
     velocity=velocity + pow(velocity_gamma,m)*future_velocities[m];
   }
   velocity=velocity/future_velocities.size();
+  cout<<velocity<<" .....    ";
+
+  // understeer aware
+  velocity = velocity - understeer_gain*closest_wp_dis;
+  
   cout<<velocity<<"\n";
 
 
