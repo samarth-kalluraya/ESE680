@@ -35,6 +35,7 @@ private:
   double car_pos_y;
   tf::Quaternion quat;
 
+  // int k = 0;
 
   string waypoint_x;
   string waypoint_y;
@@ -42,16 +43,20 @@ private:
   string emp;
   double flo_x;
   double flo_y;
-  double L = 0.6 ;  //0.8 works 1.4   1.6
-  double P = 0.22;  //0.21   0.22
-
-  double understeer_gain = 4;  //0.21   0.22
-
-  int k = 0;
   int flag = 0;
 
-  vector<float> L_velocity = {0.5,1,1.5,2}; //velocity lookahead distances
+  double L = 0.6 ;  //0.8 works 1.4   1.6
+  double P = 0.22;  //0.21   0.22
+  double understeer_gain = 4;  //0.21   0.22
   double velocity_gamma = 1;
+  vector<float> L_velocity = {0.5,1,1.5,2}; //velocity lookahead distances
+  
+  // double L;
+  // double P;  
+  // double understeer_gain;  
+  // double velocity_gamma;
+  // vector<float> L_velocity; //velocity lookahead distances
+
 
   // TODO: create ROS subscribers and publishers
 
@@ -62,6 +67,12 @@ PurePursuit() {
   drive_pub = n.advertise<ackermann_msgs::AckermannDriveStamped>("/drive", 10);
   marker_pub = n.advertise<visualization_msgs::Marker>("visualization_marker", 100);
   // TODO: create ROS subscribers and publishers
+  srand(time(NULL));
+  n.getParam("L", L);
+  n.getParam("P", P);
+  n.getParam("understeer_gain", understeer_gain);
+  n.getParam("velocity_gamma", velocity_gamma);
+  cout<<L<<"\n";
 }
 
 void GetWaypoints(){
@@ -168,7 +179,7 @@ void pose_callback(const nav_msgs::Odometry::ConstPtr &pose_msg) {
 
     for(int m=0; m<L_velocity.size(); m++){
       dis = abs(sqrt(x_car_frame*x_car_frame + y_car_frame*y_car_frame)-L_velocity[m]);
-      if (x_car_frame>L_velocity[m] && dis < shortest_vel[m]){
+      if (x_car_frame>L_velocity[m]/2 && dis < shortest_vel[m]){
         shortest_vel[m] = dis;
         future_velocities[m] = data_int[i][3];
       }
@@ -223,10 +234,10 @@ void pose_callback(const nav_msgs::Odometry::ConstPtr &pose_msg) {
   double angle = P*arc;
   // cout << "x" << x_car_frame << endl;
   for(int m=0; m<L_velocity.size(); m++){
-    cout<<future_velocities[m]<<", ";
+    //cout<<future_velocities[m]<<", ";
     
   }
-  cout<<"\n";
+  //cout<<"\n";
   // cout << "y" << y_car_frame << endl;
   // cout << "angle" << angle << endl;
   // cout << angle <<endl;
@@ -242,12 +253,12 @@ void pose_callback(const nav_msgs::Odometry::ConstPtr &pose_msg) {
     velocity=velocity + pow(velocity_gamma,m)*future_velocities[m];
   }
   velocity=velocity/future_velocities.size();
-  cout<<velocity<<" .....    ";
+  //cout<<velocity<<" .....    ";
 
   // understeer aware
   velocity = velocity - understeer_gain*closest_wp_dis;
   
-  cout<<velocity<<"\n";
+  //cout<<velocity<<"\n";
 
 
   if(angle >0.42)
