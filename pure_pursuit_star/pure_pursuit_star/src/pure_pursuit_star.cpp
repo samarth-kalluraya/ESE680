@@ -45,9 +45,9 @@ private:
   double flo_y;
   int flag = 0;
 
-  double L = 0.6 ;  //0.8 works 1.4   1.6
+  double L = 1 ;  //0.8 works 1.4   1.6
   double P = 0.22;  //0.21   0.22
-  double understeer_gain = 4;  //0.21   0.22
+  double understeer_gain = 6;  //0.21   0.22
   double velocity_gamma = 1;
   vector<float> L_velocity = {0.5,1,1.5,2}; //velocity lookahead distances
   
@@ -78,7 +78,7 @@ PurePursuit() {
 void GetWaypoints(){
   // File pointer
   std::ifstream myfile;
-  myfile.open("/home/samarth/samarth_ws/src/f110-fall2019-skeletons/final_project/ESE680/pure_pursuit_star/levine_processed.csv");
+  myfile.open("/home/samarth/samarth_ws/src/f110-fall2019-skeletons/final_project/ESE680/pure_pursuit_star/final_processed.csv");
 
   ///home/xinlong/XinlongZheng_ws/src/vision/src/vehicle_tracker_prediction_skeleton/waypoints
   string line;
@@ -256,7 +256,7 @@ void pose_callback(const nav_msgs::Odometry::ConstPtr &pose_msg) {
   //cout<<velocity<<" .....    ";
 
   // understeer aware
-  velocity = velocity - understeer_gain*closest_wp_dis;
+  velocity = (velocity - understeer_gain*closest_wp_dis )*0.7;
   
   //cout<<velocity<<"\n";
 
