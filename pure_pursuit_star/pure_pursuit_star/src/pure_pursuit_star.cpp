@@ -27,6 +27,7 @@ private:
 
   visualization_msgs::Marker marker;
   visualization_msgs::Marker path_line;
+  visualization_msgs::Marker velo_points;
   
   std::vector<std::vector<std::string> > dataList;
   vector<vector<float>> data_int;
@@ -45,9 +46,9 @@ private:
   double flo_y;
   int flag = 0;
 
-  double L = 1 ;  //0.8 works 1.4   1.6
+  double L = 0.6 ;  //0.8 works 1.4   1.6
   double P = 0.22;  //0.21   0.22
-  double understeer_gain = 6;  //0.21   0.22
+  double understeer_gain = 10;  //0.21   0.22
   double velocity_gamma = 1;
   vector<float> L_velocity = {0.5,1,1.5,2}; //velocity lookahead distances
   
@@ -63,16 +64,17 @@ private:
 public:
 PurePursuit() {
   n = ros::NodeHandle();
-  pose_sub = n.subscribe("/pf/pose/odom", 1000, &PurePursuit::pose_callback,this);
-  drive_pub = n.advertise<ackermann_msgs::AckermannDriveStamped>("/drive", 10);
-  marker_pub = n.advertise<visualization_msgs::Marker>("visualization_marker", 100);
-  // TODO: create ROS subscribers and publishers
   srand(time(NULL));
   n.getParam("L", L);
   n.getParam("P", P);
   n.getParam("understeer_gain", understeer_gain);
   n.getParam("velocity_gamma", velocity_gamma);
   cout<<L<<"\n";
+  pose_sub = n.subscribe("/pf/pose/odom", 1000, &PurePursuit::pose_callback,this);
+  drive_pub = n.advertise<ackermann_msgs::AckermannDriveStamped>("/drive", 10);
+  marker_pub = n.advertise<visualization_msgs::Marker>("visualization_marker", 100);
+  // TODO: create ROS subscribers and publishers
+
 }
 
 void GetWaypoints(){
@@ -137,6 +139,9 @@ void pose_callback(const nav_msgs::Odometry::ConstPtr &pose_msg) {
   double y_car_frame;
   double temp_i;
 
+  vector<double> mark_xx(L_velocity.size());
+  vector<double> mark_yy(L_velocity.size());
+
   vector<double> shortest_vel;
   for(int i=0; i<L_velocity.size(); i++){
     shortest_vel.push_back(DBL_MAX);
@@ -157,14 +162,16 @@ void pose_callback(const nav_msgs::Odometry::ConstPtr &pose_msg) {
     path_line.pose.orientation.y = 0.0;
     path_line.pose.orientation.z = 0.0;
     path_line.pose.orientation.w = 1.0;
-    path_line.scale.x = 0.2;
-    path_line.scale.y = 0.2;
-    path_line.scale.z = 0.2;
+    path_line.scale.x = 0.05;
+    path_line.scale.y = 0.05;
+    path_line.scale.z = 0.05;
     path_line.color.a = 1.0; // Don't forget to set the alpha!
     path_line.color.r = 0.0;
     path_line.color.g = 0.0;
     path_line.color.b = 1.0;
   }
+    
+
 
   for(int i=0; i<data_int.size(); i++){
     x_car_frame = (data_int[i][0]-car_pos_x)*cos(yaw) + (data_int[i][1]-car_pos_y)*sin(yaw);
@@ -182,6 +189,8 @@ void pose_callback(const nav_msgs::Odometry::ConstPtr &pose_msg) {
       if (x_car_frame>L_velocity[m]/2 && dis < shortest_vel[m]){
         shortest_vel[m] = dis;
         future_velocities[m] = data_int[i][3];
+        mark_xx[m] = data_int[i][0];
+        mark_yy[m] = data_int[i][1];
       }
     }
 
@@ -212,31 +221,91 @@ void pose_callback(const nav_msgs::Odometry::ConstPtr &pose_msg) {
   marker.id = 0;
   marker.type = visualization_msgs::Marker::SPHERE;
   marker.action = visualization_msgs::Marker::ADD;
-  marker.pose.position.x = mark_x;
-  marker.pose.position.y = mark_y;
-  marker.pose.position.z = 0;
-  marker.pose.orientation.x = 0.0;
-  marker.pose.orientation.y = 0.0;
-  marker.pose.orientation.z = 0.0;
-  marker.pose.orientation.w = 0.0;
-  marker.scale.x = 0.6;
-  marker.scale.y = 0.6;
-  marker.scale.z = 0.6;
+  marker.pose.position.x = closest_x;  marker.pose.position.y = closest_y;  marker.pose.position.z = 0;
+  marker.pose.orientation.x = 0.0;  marker.pose.orientation.y = 0.0;  marker.pose.orientation.z = 0.0;  marker.pose.orientation.w = 0.0;
+  marker.scale.x = 0.2;  marker.scale.y = 0.2;  marker.scale.z = 0.2;
   marker.color.a = 1.0; // Don't forget to set the alpha!
-  marker.color.r = 1.0;
-  marker.color.g = 0.0;
-  marker.color.b = 0.0;
-  //  marker.lifetime = ros::Duration(0.01);
+  marker.color.r = 1.0;  marker.color.g = 0.0;  marker.color.b = 0.0;
   marker_pub.publish( marker );
+  //  marker.lifetime = ros::Duration(0.01);
+
+
+
+
+  marker.header.frame_id = "map";
+  marker.header.stamp = ros::Time();
+  marker.ns = "velo_ball";
+  marker.id = 3;
+  marker.type = visualization_msgs::Marker::SPHERE;
+  marker.action = visualization_msgs::Marker::ADD;
+  marker.pose.position.x = mark_xx[0];  marker.pose.position.y = mark_yy[0];  marker.pose.position.z = 0;
+  marker.pose.orientation.x = 0.0;  marker.pose.orientation.y = 0.0;  marker.pose.orientation.z = 0.0;  marker.pose.orientation.w = 0.0;
+  marker.scale.x = 0.4;  marker.scale.y = 0.4;  marker.scale.z = 0.4;
+  marker.color.a = 1.0; // Don't forget to set the alpha!
+  marker.color.r = 0.0;  marker.color.g = 1.0;  marker.color.b = 0.0;
+  marker_pub.publish( marker );
+
+  marker.header.frame_id = "map";
+  marker.header.stamp = ros::Time();
+  marker.ns = "velo_ball";
+  marker.id = 4;
+  marker.type = visualization_msgs::Marker::SPHERE;
+  marker.action = visualization_msgs::Marker::ADD;
+  marker.pose.position.x = mark_xx[1];  marker.pose.position.y = mark_yy[1];  marker.pose.position.z = 0;
+  marker.pose.orientation.x = 0.0;  marker.pose.orientation.y = 0.0;  marker.pose.orientation.z = 0.0;  marker.pose.orientation.w = 0.0;
+  marker.scale.x = 0.4;  marker.scale.y = 0.4;  marker.scale.z = 0.4;
+  marker.color.a = 1.0; // Don't forget to set the alpha!
+  marker.color.r = 0.0;  marker.color.g = 1.0;  marker.color.b = 0.0;
+  marker_pub.publish( marker );
+
+  marker.header.frame_id = "map";
+  marker.header.stamp = ros::Time();
+  marker.ns = "velo_ball";
+  marker.id = 5;
+  marker.type = visualization_msgs::Marker::SPHERE;
+  marker.action = visualization_msgs::Marker::ADD;
+  marker.pose.position.x = mark_xx[2];  marker.pose.position.y = mark_yy[2];  marker.pose.position.z = 0;
+  marker.pose.orientation.x = 0.0;  marker.pose.orientation.y = 0.0;  marker.pose.orientation.z = 0.0;  marker.pose.orientation.w = 0.0;
+  marker.scale.x = 0.4;  marker.scale.y = 0.4;  marker.scale.z = 0.4;
+  marker.color.a = 1.0; // Don't forget to set the alpha!
+  marker.color.r = 0.0;  marker.color.g = 1.0;  marker.color.b = 0.0;
+  marker_pub.publish( marker );
+
+  marker.header.frame_id = "map";
+  marker.header.stamp = ros::Time();
+  marker.ns = "velo_ball";
+  marker.id = 6;
+  marker.type = visualization_msgs::Marker::SPHERE;
+  marker.action = visualization_msgs::Marker::ADD;
+  marker.pose.position.x = mark_xx[3];  marker.pose.position.y = mark_yy[3];  marker.pose.position.z = 0;
+  marker.pose.orientation.x = 0.0;  marker.pose.orientation.y = 0.0;  marker.pose.orientation.z = 0.0;  marker.pose.orientation.w = 0.0;
+  marker.scale.x = 0.4;  marker.scale.y = 0.4;  marker.scale.z = 0.4;
+  marker.color.a = 1.0; // Don't forget to set the alpha!
+  marker.color.r = 0.0;  marker.color.g = 1.0;  marker.color.b = 0.0;
+  marker_pub.publish( marker );
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   double L_square = best_x*best_x+best_y*best_y;
   double arc =  2*best_y/L_square;
   double angle = P*arc;
   // cout << "x" << x_car_frame << endl;
-  for(int m=0; m<L_velocity.size(); m++){
-    //cout<<future_velocities[m]<<", ";
+  // for(int m=0; m<L_velocity.size(); m++){
+  //   cout<<future_velocities[m]<<" ,";
     
-  }
+  // }
   //cout<<"\n";
   // cout << "y" << y_car_frame << endl;
   // cout << "angle" << angle << endl;
@@ -253,12 +322,17 @@ void pose_callback(const nav_msgs::Odometry::ConstPtr &pose_msg) {
     velocity=velocity + pow(velocity_gamma,m)*future_velocities[m];
   }
   velocity=velocity/future_velocities.size();
-  //cout<<velocity<<" .....    ";
+  cout<<velocity<<" .....    ";
 
   // understeer aware
-  velocity = (velocity - understeer_gain*closest_wp_dis )*0.7;
   
-  //cout<<velocity<<"\n";
+  velocity = (velocity - understeer_gain*closest_wp_dis )*1;
+  if(velocity<0.5){
+    velocity = 0.5;
+  }
+  
+  cout<<velocity<<"\n";
+  cout<<"                              "<<closest_wp_dis<<"\n";
 
 
   if(angle >0.42)
