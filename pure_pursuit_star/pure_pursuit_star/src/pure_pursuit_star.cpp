@@ -326,7 +326,7 @@ void pose_callback(const nav_msgs::Odometry::ConstPtr &pose_msg) {
 
   // understeer aware
   
-  velocity = (velocity - understeer_gain*closest_wp_dis )*1;
+  velocity = (velocity - understeer_gain*closest_wp_dis )*0.7;
   if(velocity<0.5){
     velocity = 0.5;
   }
