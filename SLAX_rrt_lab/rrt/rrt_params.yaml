@@ -1,0 +1,51 @@
+# Topics that RRT listens to
+# TODO: add your own
+# TODO: change this to the pose topic published particle filter
+pose_topic: "/pf/viz/inferred_pose"
+scan_topic: "/scan"
+RRT_star : false
+
+L_waypoints: 2.7
+sample_ly: 4
+
+global_L_follow: 1.4
+rrt_radius: 4
+rrt_iteration: 500
+prop_gain: 0.27  #proportional gain
+sample_lx: 4
+inflation: 0.25
+rrt_goal_dist: 0.2
+
+steer_param: 0.6
+steer_param_2: 0.5
+
+#waypoint_path: "/home/samarth/samarth_ws/src/f110-fall2019-skeletons/SLAX_rrt_lab/test.csv"
+waypoint_path: "/home/samarth/samarth_ws/src/f110-fall2019-skeletons/final_project/ESE680/SLAX_rrt_lab/final_processed.csv"
+#waypoint_path: "/home/samarth/samarth_ws/src/f110-fall2019-skeletons/SLAX_rrt_lab/levine_processed.csv"
+
+
+#velocity values
+
+#  double velocity = 5;
+#  if(abs(angle*180/M_PI) <steer1){
+#  	velocity = vel_1;
+#  }else if(abs(angle*180/M_PI) <steer2){
+#  	velocity = vel_2;
+#  }else{
+#  	velocity = vel_else;
+#  }
+steer1: 5
+steer2: 12
+
+vel_1: 3.5
+vel_2: 2.5
+vel_3: 1.5
+
+# Topics that RRT publishes to
+# TODO: add your own
+# visualization
+show_obstacles: True
+show_rrt_path: True
+show_tree: True
+show_ball: True
+# TODO: add Parameters for RRT
