@@ -1,8 +1,0 @@
-<?xml version="1.0"?>
-<launch>
-  <!-- Launch the rrt node with the parameters from params.yaml -->
-  <node pkg="pure_pursuit_star" name="pure_pursuit_star" type="pure_pursuit_star" output="screen">
-    <rosparam command="load" file="$(find pure_pursuit_star)/pp_star_params.yaml"/>
-  </node>
-
-</launch>
