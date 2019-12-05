@@ -109,12 +109,15 @@ void RRT::map_callback(const nav_msgs::OccupancyGrid::ConstPtr& map_msg) {
 
 
   // vector<int8_t> map_data;
-   map_data = map_msg -> data;
-   origin_x = (map_msg -> info).origin.position.x;
-   origin_y = (map_msg -> info).origin.position.y;
-   wid = (map_msg -> info).width;
-   hei = (map_msg -> info).height;
-   resol = (map_msg -> info).resolution;
+  if(load_map_flag){
+    map_data = map_msg -> data;
+    origin_x = (map_msg -> info).origin.position.x;
+    origin_y = (map_msg -> info).origin.position.y;
+    wid = (map_msg -> info).width;
+    hei = (map_msg -> info).height;
+    resol = (map_msg -> info).resolution;
+    load_map_flag = false;
+  }
    // int total = 0;
    // int positive =0;
    // for(auto it = 0; it != map_data.size(); it++){
@@ -161,17 +164,11 @@ void RRT::scan_callback(const sensor_msgs::LaserScan::ConstPtr &scan_msg) {
 }
 
 void RRT::pf_callback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg) {
-  // The pose callback when subscribed to particle filter's inferred pose
-  // The RRT main loop happens here
-  // Args:
-  //    pose_msg (*PoseStamped): pointer to the incoming pose message
-  // Returns:
-  //
+
+  // Waypoints load only in the beginning
     if(waypoint_load_flag){
     std::ifstream myfile;
     myfile.open(waypoint_path);
-
-    ///home/xinlong/XinlongZheng_ws/src/vision/src/vehicle_tracker_prediction_skeleton/waypoints
     string line;
     string delimeter = ",";
 
@@ -200,38 +197,59 @@ void RRT::pf_callback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg) {
     waypoint_load_flag=false;
   }
 
-  if(RRT_star){
-    vector<int8_t>  map_update =  map_data;
-    // for(auto it = 0; it != map_update.size(); it++){
-    //   map_update[it]=0;
-    // }
-    car_pos_x = (pose_msg->pose).position.x;
-    car_pos_y = (pose_msg->pose).position.y;
-    tf::Quaternion quat((pose_msg->pose).orientation.x,
-    (pose_msg->pose).orientation.y,
-    (pose_msg->pose).orientation.z,
-    (pose_msg->pose).orientation.w);
-    tf::Matrix3x3 m(quat);
-    double roll,pitch,yaw;
-    m.getRPY(roll,pitch,yaw);
-    for(int i =0; i<range_data.size(); i++){
-    //  cout << i << "of" << range_data.size()<<endl;
-       double point_len = range_data[i];
-       double point_ang = angle_min + i*angle_incre;
-       double point_x_car = point_len*cos(point_ang);
-       double point_y_car = point_len*sin(point_ang);
-       vector<double> point_pos_w;
-       double point_x_w = cos(yaw)*point_x_car - sin(yaw)*point_y_car + car_pos_x;
-       double point_y_w = sin(yaw)*point_x_car + cos(yaw)*point_y_car + car_pos_y;
-       for(double m=-inflation; m<=inflation; m=m+resol){
-         for(double n=-inflation; n<=inflation ;n=n+resol){
-           point_pos_w.clear();
-           point_pos_w.push_back(point_x_w+m+0.8);
-           point_pos_w.push_back(point_y_w+n);
-           int idx = xy_to_grid(point_pos_w);
-           map_update[idx] = 1;
-         }
-       }
+// check if obstacle is present
+  car_pos_x = (pose_msg->pose).position.x;
+  car_pos_y = (pose_msg->pose).position.y;
+  tf::Quaternion quat((pose_msg->pose).orientation.x,
+  (pose_msg->pose).orientation.y,
+  (pose_msg->pose).orientation.z,
+  (pose_msg->pose).orientation.w);
+  tf::Matrix3x3 m(quat);
+  double roll,pitch,yaw;
+  m.getRPY(roll,pitch,yaw);
+
+  
+  vector<int8_t>  map_update =  map_data;
+  int obstacle_count=0;
+  vector<double> point_pos_xw;
+  vector<double> point_pos_yw;
+  for(int i =0; i<range_data.size(); i++){
+  //  cout << i << "of" << range_data.size()<<endl;
+    double point_len = range_data[i];
+    double point_ang = angle_min + i*angle_incre;
+    double point_x_car = point_len*cos(point_ang);
+    double point_y_car = point_len*sin(point_ang);
+    vector<double> point_pos_w;
+    double point_x_w = cos(yaw)*point_x_car - sin(yaw)*point_y_car + car_pos_x;
+    double point_y_w = sin(yaw)*point_x_car + cos(yaw)*point_y_car + car_pos_y;
+    bool is_obstacle = true;
+    for(double m=-inflation; m<=inflation; m=m+resol){
+      for(double n=-inflation; n<=inflation ;n=n+resol){
+        point_pos_w.clear();
+        point_pos_w.push_back(point_x_w+m+0.8);
+        point_pos_w.push_back(point_y_w+n);
+        point_pos_xw.push_back(point_x_w+m+0.8);
+        point_pos_yw.push_back(point_y_w+n);
+        int idx = xy_to_grid(point_pos_w);
+        if(map_update[idx]>0){
+          is_obstacle = false;
+        }
+      }
+    }
+    if(is_obstacle){
+      obstacle_count=obstacle_count+1;
+    }
+  }
+  cout<<"\nobstacle count  : "<<obstacle_count <<"\n";
+// end of obstacle detection
+
+      vector<double> point_pos_w;
+    for(int i=0; i<point_pos_xw.size();i++){
+      point_pos_w.clear();
+      point_pos_w.push_back(point_pos_xw[i]);
+      point_pos_w.push_back(point_pos_yw[i]);
+      int idx = xy_to_grid(point_pos_w);
+      map_update[idx] = 1;
     }
   
     visualization_msgs::Marker grid_point;
@@ -254,6 +272,74 @@ void RRT::pf_callback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg) {
     grid_point.color.g = 0.0;
     grid_point.color.b = 0.0;
     geometry_msgs::Point p;
+    for(auto it = 0; it != map_update.size(); it++){
+      if(int(map_update[it]) >0){
+        vector<double> xy = grid_to_xy(it);
+    //    cout << xy[0] << "and " << xy[1] << endl;
+  
+        p.x =  xy[0];
+        p.y =  xy[1];
+        p.z = 0;
+  
+        grid_point.points.push_back(p);
+    //    grid_point.points.push_back(p);
+      }
+    }
+
+
+  if(RRT_star){ 
+    // for(auto it = 0; it != map_update.size(); it++){
+    //   map_update[it]=0;
+    // }
+
+    // for(int i =0; i<range_data.size(); i++){
+    // //  cout << i << "of" << range_data.size()<<endl;
+    //    double point_len = range_data[i];
+    //    double point_ang = angle_min + i*angle_incre;
+    //    double point_x_car = point_len*cos(point_ang);
+    //    double point_y_car = point_len*sin(point_ang);
+    //    vector<double> point_pos_w;
+    //    double point_x_w = cos(yaw)*point_x_car - sin(yaw)*point_y_car + car_pos_x;
+    //    double point_y_w = sin(yaw)*point_x_car + cos(yaw)*point_y_car + car_pos_y;
+    //    for(double m=-inflation; m<=inflation; m=m+resol){
+    //      for(double n=-inflation; n<=inflation ;n=n+resol){
+    //        point_pos_w.clear();
+    //        point_pos_w.push_back(point_x_w+m+0.8);
+    //        point_pos_w.push_back(point_y_w+n);
+    //        int idx = xy_to_grid(point_pos_w);
+    //        map_update[idx] = 1;
+    //      }
+    //    }
+    // }
+    // vector<double> point_pos_w;
+    // for(int i=0; i<point_pos_xw.size();i++){
+    //   point_pos_w.clear();
+    //   point_pos_w.push_back(point_pos_xw[i]);
+    //   point_pos_w.push_back(point_pos_yw[i]);
+    //   int idx = xy_to_grid(point_pos_w);
+    //   map_update[idx] = 1;
+    // }
+  
+    // visualization_msgs::Marker grid_point;
+    // grid_point.header.frame_id = "/map";
+    // grid_point.header.stamp = ros::Time();
+    // grid_point.ns = "grids";
+    // grid_point.id = 0;
+    // grid_point.type = visualization_msgs::Marker::POINTS;
+    // grid_point.action = visualization_msgs::Marker::ADD;
+  
+    // grid_point.pose.orientation.x = 0.0;
+    // grid_point.pose.orientation.y = 0.0;
+    // grid_point.pose.orientation.z = 0.0;
+    // grid_point.pose.orientation.w = 1.0;
+    // grid_point.scale.x = 0.03;
+    // grid_point.scale.y = 0.03;
+    // grid_point.scale.z = 0.03;
+    // grid_point.color.a = 1.0; // Don't forget to set the alpha!
+    // grid_point.color.r = 1.0;
+    // grid_point.color.g = 0.0;
+    // grid_point.color.b = 0.0;
+    // geometry_msgs::Point p;
   
     visualization_msgs::Marker best_point;
     best_point.header.frame_id = "/map";
@@ -299,19 +385,19 @@ void RRT::pf_callback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg) {
     
   
   
-    for(auto it = 0; it != map_update.size(); it++){
-      if(int(map_update[it]) >0){
-        vector<double> xy = grid_to_xy(it);
-    //    cout << xy[0] << "and " << xy[1] << endl;
+    // for(auto it = 0; it != map_update.size(); it++){
+    //   if(int(map_update[it]) >0){
+    //     vector<double> xy = grid_to_xy(it);
+    // //    cout << xy[0] << "and " << xy[1] << endl;
   
-        p.x =  xy[0];
-        p.y =  xy[1];
-        p.z = 0;
+    //     p.x =  xy[0];
+    //     p.y =  xy[1];
+    //     p.z = 0;
   
-        grid_point.points.push_back(p);
-    //    grid_point.points.push_back(p);
-      }
-    }
+    //     grid_point.points.push_back(p);
+    // //    grid_point.points.push_back(p);
+    //   }
+    // }
   //  marker_pub.publish(grid_point);
     //waypoint_path="/home/samarth/rcws/logs/test.csv";
     double shortest = DBL_MAX;
@@ -414,7 +500,7 @@ void RRT::pf_callback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg) {
           }
         
       if( is_goal(new_node, goal_point_x, goal_point_y) == true){
-        break;
+        continue;
       }
     }
     }
@@ -608,15 +694,7 @@ void RRT::pf_callback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg) {
   //bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
 
   if(!RRT_star){
-  car_pos_x = (pose_msg->pose).position.x;
-  car_pos_y = (pose_msg->pose).position.y;
-  tf::Quaternion quat((pose_msg->pose).orientation.x,
-  (pose_msg->pose).orientation.y,
-  (pose_msg->pose).orientation.z,
-  (pose_msg->pose).orientation.w);
-  tf::Matrix3x3 m(quat);
-  double roll,pitch,yaw;
-  m.getRPY(roll,pitch,yaw);
+
 
   double closest_x;
   double closest_y;
@@ -803,17 +881,17 @@ void RRT::pf_callback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg) {
     velocity=velocity + pow(velocity_gamma,m)*future_velocities[m];
   }
   velocity=velocity/future_velocities.size();
-  cout<<velocity<<" .....    ";
+  // cout<<velocity<<" .....    ";
 
   // understeer aware
   
-  velocity = (velocity - understeer_gain*closest_wp_dis )*1;
+  velocity = (velocity - understeer_gain*closest_wp_dis )*0.5;
   if(velocity<0.5){
     velocity = 0.5;
   }
   
-  cout<<velocity<<"\n";
-  cout<<"                              "<<closest_wp_dis<<"\n";
+  // cout<<velocity<<"\n";
+  // cout<<"                              "<<closest_wp_dis<<"\n";
 
 
   if(angle >0.42)
@@ -826,6 +904,9 @@ void RRT::pf_callback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg) {
   drive_msg.drive.speed = velocity;
 
   drive_pub.publish(drive_msg);
+  if(show_obstacles){
+      marker_pub.publish(grid_point);  
+    }
   }
 
 

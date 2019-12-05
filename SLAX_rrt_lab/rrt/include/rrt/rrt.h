@@ -123,6 +123,9 @@ private:
     double angle_incre;
 
     bool waypoint_load_flag = true;
+    bool load_map_flag = true;
+
+
     std::vector<std::vector<std::string> > dataList;
     vector<vector<float>> data_int;
 

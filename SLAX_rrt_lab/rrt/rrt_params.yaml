@@ -3,16 +3,16 @@
 # TODO: change this to the pose topic published particle filter
 pose_topic: "/pf/viz/inferred_pose"
 scan_topic: "/scan"
-RRT_star : true
+RRT_star : false
 
-L_waypoints: 1.5
-sample_ly: 3
+L_waypoints: 2.7
+sample_ly: 4
 
-global_L_follow: 1
-rrt_radius: 2
-rrt_iteration: 100
+global_L_follow: 1.4
+rrt_radius: 4
+rrt_iteration: 500
 prop_gain: 0.27  #proportional gain
-sample_lx: 3
+sample_lx: 4
 inflation: 0.25
 rrt_goal_dist: 0.2
 
@@ -20,7 +20,7 @@ steer_param: 0.6
 steer_param_2: 0.5
 
 #waypoint_path: "/home/samarth/samarth_ws/src/f110-fall2019-skeletons/SLAX_rrt_lab/test.csv"
-waypoint_path: "/home/samarth/samarth_ws/src/f110-fall2019-skeletons/SLAX_rrt_lab/final_processed.csv"
+waypoint_path: "/home/samarth/samarth_ws/src/f110-fall2019-skeletons/final_project/ESE680/SLAX_rrt_lab/final_processed.csv"
 #waypoint_path: "/home/samarth/samarth_ws/src/f110-fall2019-skeletons/SLAX_rrt_lab/levine_processed.csv"
 
 
