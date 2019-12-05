@@ -1,0 +1,17 @@
+# Topics that RRT listens to
+# TODO: add your own
+# TODO: change this to the pose topic published particle filter
+pose_topic: "/pf/viz/inferred_pose"
+scan_topic: "/scan"
+
+L: 2 #lookahead distance
+sample_ly: 3
+
+L : 0.6
+P : 0.22
+understeer_gain : 4
+velocity_gamma : 1
+
+#vector<float> L_velocity = {0.5,1,1.5,2}; //velocity lookahead distances
+
+# TODO: add Parameters for RRT
