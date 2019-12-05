@@ -240,7 +240,14 @@ void RRT::pf_callback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg) {
       obstacle_count=obstacle_count+1;
     }
   }
-  cout<<"\nobstacle count  : "<<obstacle_count <<"\n";
+  cout<<"                obstacle count  : "<<obstacle_count <<"\n";
+  if(obstacle_count>5){
+    RRT_star = true;
+    cout<<"RRT star\n";
+  }else{
+    RRT_star = false;
+    cout<<"pure pursuit\n";
+  }
 // end of obstacle detection
 
       vector<double> point_pos_w;

@@ -3,7 +3,7 @@
 # TODO: change this to the pose topic published particle filter
 pose_topic: "/pf/viz/inferred_pose"
 scan_topic: "/scan"
-RRT_star : false
+RRT_star : true
 
 L_waypoints: 2.7
 sample_ly: 4
