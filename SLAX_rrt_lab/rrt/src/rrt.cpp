@@ -49,13 +49,13 @@ RRT::RRT(ros::NodeHandle &nh): nh_(nh), gen((std::random_device())()) {
 
     nh_.getParam("sample_lx", sample_lx);
     nh_.getParam("sample_ly", sample_ly);
-    
+
     nh_.getParam("rrt_goal_dist", rrt_goal_dist);
     nh_.getParam("inflation", inflation);
     nh_.getParam("steer_param", steer_param);
-    
+
     nh_.getParam("RRT_star", RRT_star);
-    
+
     nh_.getParam("steer1", steer1);
     nh_.getParam("steer2", steer2);
     nh_.getParam("vel_1", vel_1);
@@ -89,7 +89,7 @@ int RRT::xy_to_grid(vector<double> coo) {
     double x =  coo[0];
     double y = coo[1];
     int res;
-    res = int((y-origin_y)/resol)*wid + int((x-origin_y)/resol);
+    res = int((y-origin_y)/resol)*wid + int((x-origin_x)/resol);
 
     return res;
 }
@@ -208,7 +208,7 @@ void RRT::pf_callback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg) {
   double roll,pitch,yaw;
   m.getRPY(roll,pitch,yaw);
 
-  
+
   vector<int8_t>  map_update =  map_data;
   int obstacle_count=0;
   vector<double> point_pos_xw;
@@ -226,9 +226,9 @@ void RRT::pf_callback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg) {
     for(double m=-inflation; m<=inflation; m=m+resol){
       for(double n=-inflation; n<=inflation ;n=n+resol){
         point_pos_w.clear();
-        point_pos_w.push_back(point_x_w+m+0.8);
+        point_pos_w.push_back(point_x_w+m);
         point_pos_w.push_back(point_y_w+n);
-        point_pos_xw.push_back(point_x_w+m+0.8);
+        point_pos_xw.push_back(point_x_w+m);  //0.8
         point_pos_yw.push_back(point_y_w+n);
         int idx = xy_to_grid(point_pos_w);
         if(map_update[idx]>0){
@@ -241,14 +241,6 @@ void RRT::pf_callback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg) {
     }
   }
   cout<<"                obstacle count  : "<<obstacle_count <<"\n";
-  // if(obstacle_count>5){
-  //   RRT_star = true;
-  //   cout<<"RRT star\n";
-  // }else{
-  //   RRT_star = false;
-  //   cout<<"pure pursuit\n";
-  // }
-// end of obstacle detection
 
       vector<double> point_pos_w;
     for(int i=0; i<point_pos_xw.size();i++){
@@ -258,7 +250,7 @@ void RRT::pf_callback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg) {
       int idx = xy_to_grid(point_pos_w);
       map_update[idx] = 1;
     }
-  
+
     visualization_msgs::Marker grid_point;
     grid_point.header.frame_id = "/map";
     grid_point.header.stamp = ros::Time();
@@ -266,7 +258,7 @@ void RRT::pf_callback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg) {
     grid_point.id = 0;
     grid_point.type = visualization_msgs::Marker::POINTS;
     grid_point.action = visualization_msgs::Marker::ADD;
-  
+
     grid_point.pose.orientation.x = 0.0;
     grid_point.pose.orientation.y = 0.0;
     grid_point.pose.orientation.z = 0.0;
@@ -283,18 +275,26 @@ void RRT::pf_callback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg) {
       if(int(map_update[it]) >0){
         vector<double> xy = grid_to_xy(it);
     //    cout << xy[0] << "and " << xy[1] << endl;
-  
+
         p.x =  xy[0];
         p.y =  xy[1];
         p.z = 0;
-  
+
         grid_point.points.push_back(p);
     //    grid_point.points.push_back(p);
       }
     }
 
+    if(obstacle_count>5){
+      RRT_star = true;
+      cout<<"RRT star\n";
+    }else{
+      RRT_star = false;
+      cout<<"pure pursuit\n";
+    }
+  // end of obstacle detection
 
-  if(RRT_star){ 
+  if(RRT_star){
     // for(auto it = 0; it != map_update.size(); it++){
     //   map_update[it]=0;
     // }
@@ -326,7 +326,7 @@ void RRT::pf_callback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg) {
     //   int idx = xy_to_grid(point_pos_w);
     //   map_update[idx] = 1;
     // }
-  
+
     // visualization_msgs::Marker grid_point;
     // grid_point.header.frame_id = "/map";
     // grid_point.header.stamp = ros::Time();
@@ -334,7 +334,7 @@ void RRT::pf_callback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg) {
     // grid_point.id = 0;
     // grid_point.type = visualization_msgs::Marker::POINTS;
     // grid_point.action = visualization_msgs::Marker::ADD;
-  
+
     // grid_point.pose.orientation.x = 0.0;
     // grid_point.pose.orientation.y = 0.0;
     // grid_point.pose.orientation.z = 0.0;
@@ -347,7 +347,7 @@ void RRT::pf_callback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg) {
     // grid_point.color.g = 0.0;
     // grid_point.color.b = 0.0;
     // geometry_msgs::Point p;
-  
+
     visualization_msgs::Marker best_point;
     best_point.header.frame_id = "/map";
     best_point.header.stamp = ros::Time();
@@ -355,7 +355,7 @@ void RRT::pf_callback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg) {
     best_point.id = 1;
     best_point.type = visualization_msgs::Marker::POINTS;
     best_point.action = visualization_msgs::Marker::ADD;
-  
+
     best_point.pose.orientation.x = 0.0;
     best_point.pose.orientation.y = 0.0;
     best_point.pose.orientation.z = 0.0;
@@ -368,7 +368,7 @@ void RRT::pf_callback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg) {
     best_point.color.g = 1.0;
     best_point.color.b = 0.0;
     geometry_msgs::Point best_p;
-  
+
     visualization_msgs::Marker path_point;
     path_point.header.frame_id = "/map";
     path_point.header.stamp = ros::Time();
@@ -376,7 +376,7 @@ void RRT::pf_callback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg) {
     path_point.id = 2;
     path_point.type = visualization_msgs::Marker::LINE_STRIP;
     path_point.action = visualization_msgs::Marker::ADD;
-  
+
     path_point.pose.orientation.x = 0.0;
     path_point.pose.orientation.y = 0.0;
     path_point.pose.orientation.z = 0.0;
@@ -389,18 +389,18 @@ void RRT::pf_callback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg) {
     path_point.color.g = 1.0;
     path_point.color.b = 0.0;
     geometry_msgs::Point path_p;
-    
-  
-  
+
+
+
     // for(auto it = 0; it != map_update.size(); it++){
     //   if(int(map_update[it]) >0){
     //     vector<double> xy = grid_to_xy(it);
     // //    cout << xy[0] << "and " << xy[1] << endl;
-  
+
     //     p.x =  xy[0];
     //     p.y =  xy[1];
     //     p.z = 0;
-  
+
     //     grid_point.points.push_back(p);
     // //    grid_point.points.push_back(p);
     //   }
@@ -423,23 +423,23 @@ void RRT::pf_callback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg) {
     double y_car_frame;
     double L = L_waypoints;
     int count = 0;
-  
-  
+
+
     for(int i=0; i<data_int.size(); i++){
-      
+
       flo_x = data_int[i][0];
       flo_y = data_int[i][1];
-  
+
       p.x =  flo_x;
       p.y =  flo_y;
       p.z = 0;
-  
+
       grid_point.points.push_back(p);
-  
+
       x_car_frame = (flo_x-car_pos_x)*cos(yaw) + (flo_y-car_pos_y)*sin(yaw);
       y_car_frame = -(flo_x-car_pos_x)*sin(yaw) + (flo_y-car_pos_y)*cos(yaw);
       dis = abs(sqrt(x_car_frame*x_car_frame + y_car_frame*y_car_frame)-L);
-  
+
       if (x_car_frame>L/1000 && dis < shortest){
         shortest = dis;
         mark_x = flo_x;
@@ -448,15 +448,18 @@ void RRT::pf_callback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg) {
         best_y = y_car_frame;
       }
     }
-  
+
     double goal_point_x = mark_x;
     double goal_point_y = mark_y;
+
+    cout << "goal_point_x" << goal_point_x << endl;
+    cout << "goal_point_y" << goal_point_y << endl;
     best_p.x =  goal_point_x;
     best_p.y =  goal_point_y;
     best_p.z = 0;
-  
+
     best_point.points.push_back(best_p);
-  
+
   //  cout << mark_x << "and " << mark_y << endl;
     // tree as std::vector
     std::vector<Node> tree;
@@ -467,8 +470,10 @@ void RRT::pf_callback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg) {
     start_point.id = 0;
     start_point.is_root = true;
     tree.push_back(start_point);
-  
-  
+    cout << "car_x" << car_pos_x << endl;
+    cout << "car_y" << car_pos_y << endl;
+
+
     double radius = rrt_radius;
     int iteration = rrt_iteration;
     for(int m =0; m<iteration ;m++){
@@ -480,47 +485,54 @@ void RRT::pf_callback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg) {
       int nearest_count = nearest(tree,sample_point);
       Node nearest_node = tree[nearest_count];
       Node new_node = steer(nearest_node,sample_point);
-  
+      //Node new_node = sample_point;
+
       if(check_collision(nearest_node,new_node,map_update) == false){
           new_node.id = int(tree.size());
           tree.push_back(new_node);
-  
+        //  cout << "omg" << (tree[int(tree.size()-1)].parent) << endl;
           vector<int> neig = near(tree, new_node,radius);
+      //    cout << "howmanyfk" << neig.size() << endl;
           if(neig.size() > 1){
              for(int g =0; g<neig.size();g++){
-              Node node_i = tree[g];
+              Node node_i = tree[neig[g]];
               double new_cost = node_i.cost + sqrt((node_i.x-new_node.x)*(node_i.x-new_node.x) + (node_i.y-new_node.y)*(node_i.y-new_node.y));
               if(new_cost < new_node.cost && check_collision(node_i,new_node,map_update) == false ){
                 new_node.parent = node_i.id;
                 new_node.cost = new_cost;
+            //    cout << "gg" << new_node.parent << endl;
               }
+
              }
-  
+             tree[int(tree.size()-1)] = new_node;
+          //   cout << "wtf" << (tree[int(tree.size()-1)].parent) << endl;
              for(int g =0; g<neig.size();g++){
-              Node node_i = tree[g];
+              Node node_i = tree[neig[g]];
               double cost_i = new_node.cost + sqrt((node_i.x-new_node.x)*(node_i.x-new_node.x) + (node_i.y-new_node.y)*(node_i.y-new_node.y));
               if(cost_i < node_i.cost && check_collision(node_i,new_node,map_update) == false ){
                 node_i.parent = new_node.id;
                 node_i.cost = cost_i;
+                tree[neig[g]] = node_i;
               }
              }
+
           }
-        
+
       if( is_goal(new_node, goal_point_x, goal_point_y) == true){
         continue;
       }
     }
     }
-    
+
    // vector<visualization_msgs::Marker> tree_vec(int(tree.size())-1);
     geometry_msgs::Point tree_p;
     visualization_msgs::Marker tree_line;
   //   for(int i =1 ; i<iteration;i++){
-  
+
   //   //visualization_msgs::Marker tree_line;
-  
+
   //   tree_line.points.clear();
-  
+
   //   tree_line.header.frame_id = "/map";
   //   tree_line.header.stamp = ros::Time();
   //   tree_line.ns = "trees";
@@ -560,19 +572,19 @@ void RRT::pf_callback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg) {
   //   tree_p.y =  tree[par1].y;
   //   tree_p.z = 0;
   //   tree_line.points.push_back(tree_p);
-  
+
   //   }
   //   if(show_tree){
   //       marker_pub.publish(tree_line);
   //      }
   //   }
-  
+
     for(int i =1 ; i<tree.size();i++){
-  
+
     //visualization_msgs::Marker tree_line;
-  
+
     tree_line.points.clear();
-  
+
     tree_line.header.frame_id = "/map";
     tree_line.header.stamp = ros::Time();
     tree_line.ns = "trees";
@@ -591,7 +603,7 @@ void RRT::pf_callback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg) {
     tree_line.color.g = 0.0;
     tree_line.color.b = 1.0;
     tree_line.lifetime = ros::Duration(0.02);
-  
+
     tree_p.x =  tree[i].x;
     tree_p.y =  tree[i].y;
     tree_p.z = 0;
@@ -605,20 +617,20 @@ void RRT::pf_callback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg) {
         marker_pub.publish(tree_line);
        }
     }
-  
-  
-  
+
+
+
     double L_follow = global_L_follow;
     shortest = DBL_MAX;
-  
-    vector<Node> path = find_path(tree);
+
+    vector<Node> path = find_path(tree,goal_point_x,goal_point_y);
     for(int i=0; i < path.size(); i++){
      flo_x = path[i].x;
      flo_y = path[i].y;
      x_car_frame = (flo_x-car_pos_x)*cos(yaw) + (flo_y-car_pos_y)*sin(yaw);
      y_car_frame = -(flo_x-car_pos_x)*sin(yaw) + (flo_y-car_pos_y)*cos(yaw);
      dis = abs(sqrt(x_car_frame*x_car_frame + y_car_frame*y_car_frame)-L_follow);
-  
+
     //if (x_car_frame>L/2 && dis < shortest){
     if (dis < shortest && check_collision(path[0],path[i],map_update)==false){
       shortest = dis;
@@ -627,28 +639,28 @@ void RRT::pf_callback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg) {
       best_x = x_car_frame;
       best_y = y_car_frame;
     }
-  
+
     }
     goal_point_x = mark_x;
     goal_point_y = mark_y;
     best_p.x =  goal_point_x;
     best_p.y =  goal_point_y;
     best_p.z = 0;
-  
+
     best_point.points.push_back(best_p);
-  
+
     //cout<< "path:" <<waypoint_path<<endl;
-  
+
     double P = prop_gain;
     double L_square = best_x*best_x+best_y*best_y;
     double arc =  2*best_y/L_square;
     double angle = P*arc;
-  
+
     //cout << "x" << x_car_frame << endl;
     //cout << "y" << y_car_frame << endl;
     // cout << "angle" << angle << endl;
    // cout << angle <<endl;
-    
+
     double velocity = 5;
     if(abs(angle*180/M_PI) <steer1){
       velocity = vel_1;
@@ -657,7 +669,7 @@ void RRT::pf_callback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg) {
    }else{
      velocity = vel_3;
    }
-  
+
    if(angle >0.42)
    angle = 0.42;
    if(angle <-0.42)
@@ -666,28 +678,28 @@ void RRT::pf_callback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg) {
    drive_msg.header.frame_id = "laser";
    drive_msg.drive.steering_angle = angle;
    drive_msg.drive.speed = velocity;
-  
+
    drive_pub.publish(drive_msg);
-  
-  
-  
+
+
+
     for(int q=0; q<path.size(); q++){
      Node node_i = path[q];
      path_p.x =  node_i.x;
      path_p.y =  node_i.y;
      path_p.z = 0;
-  
+
      path_point.points.push_back(path_p);
-  
+
     }
-    
+
     if(show_ball){
       marker_pub.publish(best_point);
      }
      // marker_pub.publish(tree_line);
-  
+
     if(show_obstacles){
-      marker_pub.publish(grid_point);  
+      marker_pub.publish(grid_point);
     }
     if(show_rrt_path){
      marker_pub.publish(path_point);
@@ -750,7 +762,7 @@ void RRT::pf_callback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg) {
     path_line.color.g = 0.0;
     path_line.color.b = 1.0;
   }
-    
+
 
 
   for(int i=0; i<data_int.size(); i++){
@@ -774,7 +786,7 @@ void RRT::pf_callback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg) {
       }
     }
 
-    dis = abs(sqrt(x_car_frame*x_car_frame + y_car_frame*y_car_frame)-L);    
+    dis = abs(sqrt(x_car_frame*x_car_frame + y_car_frame*y_car_frame)-L);
     if (x_car_frame>L/2 && dis < shortest){
       shortest = dis;
       mark_x = data_int[i][0];
@@ -791,7 +803,7 @@ void RRT::pf_callback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg) {
       //  marker.lifetime = ros::Duration(0.01);
     }
   }
-  
+
   if (flag ==0)
   marker_pub.publish(path_line);
   flag = 1;
@@ -870,7 +882,7 @@ void RRT::pf_callback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg) {
   // cout << "x" << x_car_frame << endl;
   // for(int m=0; m<L_velocity.size(); m++){
   //   cout<<future_velocities[m]<<" ,";
-    
+
   // }
   //cout<<"\n";
   // cout << "y" << y_car_frame << endl;
@@ -891,12 +903,12 @@ void RRT::pf_callback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg) {
   // cout<<velocity<<" .....    ";
 
   // understeer aware
-  
+
   velocity = (velocity - understeer_gain*closest_wp_dis )*0.5;
   if(velocity<0.5){
     velocity = 0.5;
   }
-  
+
   // cout<<velocity<<"\n";
   // cout<<"                              "<<closest_wp_dis<<"\n";
 
@@ -912,7 +924,7 @@ void RRT::pf_callback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg) {
 
   drive_pub.publish(drive_msg);
   if(show_obstacles){
-      marker_pub.publish(grid_point);  
+      marker_pub.publish(grid_point);
     }
   }
 
@@ -1064,7 +1076,7 @@ bool RRT::is_goal(Node &latest_added_node, double goal_x, double goal_y) {
     return close_enough;
 }
 
-std::vector<Node> RRT::find_path(std::vector<Node> &tree) {
+std::vector<Node> RRT::find_path(std::vector<Node> &tree,double goal_point_x, double goal_point_y) {
     // This method traverses the tree from the node that has been determined
     // as goal
     // Args:
@@ -1073,8 +1085,24 @@ std::vector<Node> RRT::find_path(std::vector<Node> &tree) {
     // Returns:
     //   path (std::vector<Node>): the vector that represents the order of
     //      of the nodes traversed as the found path
-    auto itr = tree.rbegin();
-    Node end_node = *itr;
+    //vector<Node>* itr;
+    double dis = DBL_MAX;
+    int best;
+    for(int lit = 0; lit < tree.size(); lit++){
+     double dis_now = sqrt((tree[lit].x - goal_point_x)*(tree[lit].x - goal_point_x) + (tree[lit].y - goal_point_y)*(tree[lit].y - goal_point_y));
+     if (dis_now < dis){
+       dis = dis_now;
+       best = lit;
+     }
+    }
+
+
+    Node end_node = tree[best];
+    cout << "tree_x" << end_node.x << endl;
+    cout << "tree_y" << end_node.y << endl;
+    cout << "goal_x" << goal_point_x << endl;
+    cout << "goal_y" << goal_point_y << endl;
+
 
     std::vector<Node> found_path;
     while(end_node.is_root != true){

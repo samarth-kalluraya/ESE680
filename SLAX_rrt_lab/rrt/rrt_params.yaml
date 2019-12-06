@@ -9,18 +9,18 @@ L_waypoints: 1.5
 sample_ly: 2
 
 global_L_follow: 1
-rrt_radius: 4
+rrt_radius: 0.6
 rrt_iteration: 500
 prop_gain: 0.27  #proportional gain
 sample_lx: 2.5
-inflation: 0.15
+inflation: 0.2
 rrt_goal_dist: 0.2
 
 steer_param: 0.6
 steer_param_2: 0.5
 
 #waypoint_path: "/home/samarth/samarth_ws/src/f110-fall2019-skeletons/SLAX_rrt_lab/test.csv"
-waypoint_path: "/home/samarth/samarth_ws/src/f110-fall2019-skeletons/final_project/ESE680/SLAX_rrt_lab/final_processed.csv"
+waypoint_path: "/home/xinlong/XinlongZheng_ws/src/f110-fall2019-skeletons/rrt/final_processed.csv"
 #waypoint_path: "/home/samarth/samarth_ws/src/f110-fall2019-skeletons/SLAX_rrt_lab/levine_processed.csv"
 
 
