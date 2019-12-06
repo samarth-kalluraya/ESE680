@@ -167,35 +167,35 @@ void RRT::pf_callback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg) {
 
   // Waypoints load only in the beginning
     if(waypoint_load_flag){
-    std::ifstream myfile;
-    myfile.open(waypoint_path);
-    string line;
-    string delimeter = ",";
+      std::ifstream myfile;
+      myfile.open(waypoint_path);
+      string line;
+      string delimeter = ",";
 
-    if (myfile.is_open())
-    {
-      while ( getline (myfile,line) )
+      if (myfile.is_open())
       {
-        //  cout << "du le ma" << endl;
-        std::vector<std::string> vec;
-        boost::algorithm::split(vec, line, boost::is_any_of(delimeter));
-        dataList.push_back(vec);
+        while ( getline (myfile,line) )
+        {
+          //  cout << "du le ma" << endl;
+          std::vector<std::string> vec;
+          boost::algorithm::split(vec, line, boost::is_any_of(delimeter));
+          dataList.push_back(vec);
+        }
+        myfile.close();
       }
-      myfile.close();
-    }
 
-    unsigned long size = dataList.size();
+      unsigned long size = dataList.size();
 
-    data_int = vector<vector<float>> (size, vector<float> (4, 0));
+      data_int = vector<vector<float>> (size, vector<float> (4, 0));
 
-    for(unsigned int i = 0; i < size; i ++){
-      for (unsigned int r = 0; r<4; r++){
-        // cout<<(stof(dataList[i][r]));
-        data_int[i][r] = stof(dataList[i][r]);
+      for(unsigned int i = 0; i < size; i ++){
+        for (unsigned int r = 0; r<4; r++){
+          // cout<<(stof(dataList[i][r]));
+          data_int[i][r] = stof(dataList[i][r]);
+        }
       }
-    }
-    waypoint_load_flag=false;
-  }
+      waypoint_load_flag=false;
+   }
 
 // check if obstacle is present
   car_pos_x = (pose_msg->pose).position.x;
@@ -241,13 +241,13 @@ void RRT::pf_callback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg) {
     }
   }
   cout<<"                obstacle count  : "<<obstacle_count <<"\n";
-  if(obstacle_count>5){
-    RRT_star = true;
-    cout<<"RRT star\n";
-  }else{
-    RRT_star = false;
-    cout<<"pure pursuit\n";
-  }
+  // if(obstacle_count>5){
+  //   RRT_star = true;
+  //   cout<<"RRT star\n";
+  // }else{
+  //   RRT_star = false;
+  //   cout<<"pure pursuit\n";
+  // }
 // end of obstacle detection
 
       vector<double> point_pos_w;
@@ -360,9 +360,9 @@ void RRT::pf_callback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg) {
     best_point.pose.orientation.y = 0.0;
     best_point.pose.orientation.z = 0.0;
     best_point.pose.orientation.w = 0.0;
-    best_point.scale.x = 0.2;
-    best_point.scale.y = 0.2;
-    best_point.scale.z = 0.2;
+    best_point.scale.x = 0.4;
+    best_point.scale.y = 0.4;
+    best_point.scale.z = 0.4;
     best_point.color.a = 1.0; // Don't forget to set the alpha!
     best_point.color.r = 1.0;
     best_point.color.g = 1.0;
@@ -440,7 +440,7 @@ void RRT::pf_callback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg) {
       y_car_frame = -(flo_x-car_pos_x)*sin(yaw) + (flo_y-car_pos_y)*cos(yaw);
       dis = abs(sqrt(x_car_frame*x_car_frame + y_car_frame*y_car_frame)-L);
   
-      if (x_car_frame>L/2 && dis < shortest){
+      if (x_car_frame>L/1000 && dis < shortest){
         shortest = dis;
         mark_x = flo_x;
         mark_y = flo_y;
@@ -576,16 +576,16 @@ void RRT::pf_callback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg) {
     tree_line.header.frame_id = "/map";
     tree_line.header.stamp = ros::Time();
     tree_line.ns = "trees";
-    tree_line.type = visualization_msgs::Marker::LINE_STRIP;
+    tree_line.type = visualization_msgs::Marker::POINTS;
     tree_line.action = visualization_msgs::Marker::ADD;
     tree_line.id = i+2;
     tree_line.pose.orientation.x = 0.0;
     tree_line.pose.orientation.y = 0.0;
     tree_line.pose.orientation.z = 0.0;
     tree_line.pose.orientation.w = 1.0;
-    tree_line.scale.x = 0.01;
-    tree_line.scale.y = 0.01;
-    tree_line.scale.z = 0.01;
+    tree_line.scale.x = 0.05;
+    tree_line.scale.y = 0.05;
+    tree_line.scale.z = 0.05;
     tree_line.color.a = 1.0; // Don't forget to set the alpha!
     tree_line.color.r = 0.0;
     tree_line.color.g = 0.0;
@@ -940,8 +940,8 @@ std::vector<double> RRT::sample(double start_x,double start_y, double goal_x, do
     double bx = start_x - L_x/2*x_dir[0];
     double by = start_y - L_x/2*x_dir[1];
 
-    double res_x =  bx+ x_rand*L_x*x_dir[0] + x_rand*L_y*y_dir[0];
-    double res_y =  by+ y_rand*L_x*x_dir[1] + y_rand*L_y*y_dir[1];
+    double res_x =  bx+ x_rand*L_x*x_dir[0] + y_rand*L_y*y_dir[0];
+    double res_y =  by+ x_rand*L_x*x_dir[1] + y_rand*L_y*y_dir[1];
 
     std::vector<double> sampled_point;
     sampled_point.push_back(res_x);

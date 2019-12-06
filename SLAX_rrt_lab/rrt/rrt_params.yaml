@@ -5,15 +5,15 @@ pose_topic: "/pf/viz/inferred_pose"
 scan_topic: "/scan"
 RRT_star : true
 
-L_waypoints: 2.7
-sample_ly: 4
+L_waypoints: 1.5
+sample_ly: 2
 
-global_L_follow: 1.4
+global_L_follow: 1
 rrt_radius: 4
 rrt_iteration: 500
 prop_gain: 0.27  #proportional gain
-sample_lx: 4
-inflation: 0.25
+sample_lx: 2.5
+inflation: 0.15
 rrt_goal_dist: 0.2
 
 steer_param: 0.6
