@@ -236,7 +236,8 @@ void RRT::pf_callback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg) {
         }
       }
     }
-    if(is_obstacle){
+
+    if(is_obstacle && point_len<3){
       obstacle_count=obstacle_count+1;
     }
   }
@@ -285,7 +286,7 @@ void RRT::pf_callback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg) {
       }
     }
 
-    if(obstacle_count>5){
+    if(obstacle_count>1){
       RRT_star = true;
       cout<<"RRT star\n";
     }else{
@@ -367,6 +368,7 @@ void RRT::pf_callback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg) {
     best_point.color.r = 1.0;
     best_point.color.g = 1.0;
     best_point.color.b = 0.0;
+    best_point.lifetime = ros::Duration(0.4);
     geometry_msgs::Point best_p;
 
     visualization_msgs::Marker path_point;
@@ -388,6 +390,7 @@ void RRT::pf_callback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg) {
     path_point.color.r = 0.0;
     path_point.color.g = 1.0;
     path_point.color.b = 0.0;
+    path_point.lifetime = ros::Duration(0.4);
     geometry_msgs::Point path_p;
 
 
@@ -527,59 +530,13 @@ void RRT::pf_callback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg) {
    // vector<visualization_msgs::Marker> tree_vec(int(tree.size())-1);
     geometry_msgs::Point tree_p;
     visualization_msgs::Marker tree_line;
-  //   for(int i =1 ; i<iteration;i++){
+    
 
-  //   //visualization_msgs::Marker tree_line;
 
-  //   tree_line.points.clear();
 
-  //   tree_line.header.frame_id = "/map";
-  //   tree_line.header.stamp = ros::Time();
-  //   tree_line.ns = "trees";
-  //   tree_line.type = visualization_msgs::Marker::LINE_STRIP;
-  //   tree_line.action = visualization_msgs::Marker::ADD;
-  //   tree_line.id = i+2;
-  //   tree_line.pose.orientation.x = 0.0;
-  //   tree_line.pose.orientation.y = 0.0;
-  //   tree_line.pose.orientation.z = 0.0;
-  //   tree_line.pose.orientation.w = 1.0;
-  //   tree_line.scale.x = 0.01;
-  //   tree_line.scale.y = 0.01;
-  //   tree_line.scale.z = 0.01;
-  //   tree_line.color.a = 1.0; // Don't forget to set the alpha!
-  //   tree_line.color.r = 0.0;
-  //   tree_line.color.g = 0.0;
-  //   tree_line.color.b = 1.0;
-  //   //tree_line.lifetime = ros::Duration(0.4);
-  //  if (i < tree.size()){
-  //   tree_p.x =  tree[i].x;
-  //   tree_p.y =  tree[i].y;
-  //   tree_p.z = 0;
-  //   tree_line.points.push_back(tree_p);
-  //   int par1 = tree[i].parent;
-  //   tree_p.x =  tree[par1].x;
-  //   tree_p.y =  tree[par1].y;
-  //   tree_p.z = 0;
-  //   tree_line.points.push_back(tree_p);
-  // }
-  //   else{
-  //   tree_p.x =  tree[1].x;
-  //   tree_p.y =  tree[1].y;
-  //   tree_p.z = 0;
-  //   tree_line.points.push_back(tree_p);
-  //   int par1 = tree[1].parent;
-  //   tree_p.x =  tree[par1].x;
-  //   tree_p.y =  tree[par1].y;
-  //   tree_p.z = 0;
-  //   tree_line.points.push_back(tree_p);
 
-  //   }
-  //   if(show_tree){
-  //       marker_pub.publish(tree_line);
-  //      }
-  //   }
 
-    for(int i =1 ; i<tree.size();i++){
+    for(int i =1 ; i<iteration;i++){
 
     //visualization_msgs::Marker tree_line;
 
@@ -588,22 +545,22 @@ void RRT::pf_callback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg) {
     tree_line.header.frame_id = "/map";
     tree_line.header.stamp = ros::Time();
     tree_line.ns = "trees";
-    tree_line.type = visualization_msgs::Marker::POINTS;
+    tree_line.type = visualization_msgs::Marker::LINE_STRIP;
     tree_line.action = visualization_msgs::Marker::ADD;
     tree_line.id = i+2;
     tree_line.pose.orientation.x = 0.0;
     tree_line.pose.orientation.y = 0.0;
     tree_line.pose.orientation.z = 0.0;
     tree_line.pose.orientation.w = 1.0;
-    tree_line.scale.x = 0.05;
-    tree_line.scale.y = 0.05;
-    tree_line.scale.z = 0.05;
+    tree_line.scale.x = 0.01;
+    tree_line.scale.y = 0.01;
+    tree_line.scale.z = 0.01;
     tree_line.color.a = 1.0; // Don't forget to set the alpha!
     tree_line.color.r = 0.0;
     tree_line.color.g = 0.0;
     tree_line.color.b = 1.0;
-    tree_line.lifetime = ros::Duration(0.02);
-
+    tree_line.lifetime = ros::Duration(0.4);
+   if (i < tree.size()){
     tree_p.x =  tree[i].x;
     tree_p.y =  tree[i].y;
     tree_p.z = 0;
@@ -613,10 +570,62 @@ void RRT::pf_callback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg) {
     tree_p.y =  tree[par1].y;
     tree_p.z = 0;
     tree_line.points.push_back(tree_p);
+  }
+    else{
+    tree_p.x =  tree[1].x;
+    tree_p.y =  tree[1].y;
+    tree_p.z = 0;
+    tree_line.points.push_back(tree_p);
+    int par1 = tree[1].parent;
+    tree_p.x =  tree[par1].x;
+    tree_p.y =  tree[par1].y;
+    tree_p.z = 0;
+    tree_line.points.push_back(tree_p);
+
+    }
     if(show_tree){
         marker_pub.publish(tree_line);
        }
     }
+
+    // for(int i =1 ; i<tree.size();i++){
+
+    // //visualization_msgs::Marker tree_line;
+
+    // tree_line.points.clear();
+
+    // tree_line.header.frame_id = "/map";
+    // tree_line.header.stamp = ros::Time();
+    // tree_line.ns = "trees";
+    // tree_line.type = visualization_msgs::Marker::POINTS;
+    // tree_line.action = visualization_msgs::Marker::ADD;
+    // tree_line.id = i+2;
+    // tree_line.pose.orientation.x = 0.0;
+    // tree_line.pose.orientation.y = 0.0;
+    // tree_line.pose.orientation.z = 0.0;
+    // tree_line.pose.orientation.w = 1.0;
+    // tree_line.scale.x = 0.05;
+    // tree_line.scale.y = 0.05;
+    // tree_line.scale.z = 0.05;
+    // tree_line.color.a = 1.0; // Don't forget to set the alpha!
+    // tree_line.color.r = 0.0;
+    // tree_line.color.g = 0.0;
+    // tree_line.color.b = 1.0;
+    // tree_line.lifetime = ros::Duration(0.02);
+
+    // tree_p.x =  tree[i].x;
+    // tree_p.y =  tree[i].y;
+    // tree_p.z = 0;
+    // tree_line.points.push_back(tree_p);
+    // int par1 = tree[i].parent;
+    // tree_p.x =  tree[par1].x;
+    // tree_p.y =  tree[par1].y;
+    // tree_p.z = 0;
+    // tree_line.points.push_back(tree_p);
+    // if(show_tree){
+    //     marker_pub.publish(tree_line);
+    //    }
+    // }
 
 
 
@@ -824,31 +833,33 @@ void RRT::pf_callback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg) {
 
 
 
-  marker.header.frame_id = "map";
-  marker.header.stamp = ros::Time();
-  marker.ns = "velo_ball";
-  marker.id = 3;
-  marker.type = visualization_msgs::Marker::SPHERE;
-  marker.action = visualization_msgs::Marker::ADD;
-  marker.pose.position.x = mark_xx[0];  marker.pose.position.y = mark_yy[0];  marker.pose.position.z = 0;
-  marker.pose.orientation.x = 0.0;  marker.pose.orientation.y = 0.0;  marker.pose.orientation.z = 0.0;  marker.pose.orientation.w = 0.0;
-  marker.scale.x = 0.4;  marker.scale.y = 0.4;  marker.scale.z = 0.4;
-  marker.color.a = 1.0; // Don't forget to set the alpha!
-  marker.color.r = 0.0;  marker.color.g = 1.0;  marker.color.b = 0.0;
-  marker_pub.publish( marker );
+  // marker.header.frame_id = "map";
+  // marker.header.stamp = ros::Time();
+  // marker.ns = "velo_ball";
+  // marker.id = 3;
+  // marker.type = visualization_msgs::Marker::SPHERE;
+  // marker.action = visualization_msgs::Marker::ADD;
+  // marker.pose.position.x = mark_xx[0];  marker.pose.position.y = mark_yy[0];  marker.pose.position.z = 0;
+  // marker.pose.orientation.x = 0.0;  marker.pose.orientation.y = 0.0;  marker.pose.orientation.z = 0.0;  marker.pose.orientation.w = 0.0;
+  // marker.scale.x = 0.4;  marker.scale.y = 0.4;  marker.scale.z = 0.4;
+  // marker.color.a = 1.0; // Don't forget to set the alpha!
+  // marker.color.r = 0.0;  marker.color.g = 1.0;  marker.color.b = 0.0;
+  // marker.lifetime = ros::Duration(0.4);
+  // marker_pub.publish( marker );
 
-  marker.header.frame_id = "map";
-  marker.header.stamp = ros::Time();
-  marker.ns = "velo_ball";
-  marker.id = 4;
-  marker.type = visualization_msgs::Marker::SPHERE;
-  marker.action = visualization_msgs::Marker::ADD;
-  marker.pose.position.x = mark_xx[1];  marker.pose.position.y = mark_yy[1];  marker.pose.position.z = 0;
-  marker.pose.orientation.x = 0.0;  marker.pose.orientation.y = 0.0;  marker.pose.orientation.z = 0.0;  marker.pose.orientation.w = 0.0;
-  marker.scale.x = 0.4;  marker.scale.y = 0.4;  marker.scale.z = 0.4;
-  marker.color.a = 1.0; // Don't forget to set the alpha!
-  marker.color.r = 0.0;  marker.color.g = 1.0;  marker.color.b = 0.0;
-  marker_pub.publish( marker );
+  // marker.header.frame_id = "map";
+  // marker.header.stamp = ros::Time();
+  // marker.ns = "velo_ball";
+  // marker.id = 4;
+  // marker.type = visualization_msgs::Marker::SPHERE;
+  // marker.action = visualization_msgs::Marker::ADD;
+  // marker.pose.position.x = mark_xx[1];  marker.pose.position.y = mark_yy[1];  marker.pose.position.z = 0;
+  // marker.pose.orientation.x = 0.0;  marker.pose.orientation.y = 0.0;  marker.pose.orientation.z = 0.0;  marker.pose.orientation.w = 0.0;
+  // marker.scale.x = 0.4;  marker.scale.y = 0.4;  marker.scale.z = 0.4;
+  // marker.color.a = 1.0; // Don't forget to set the alpha!
+  // marker.color.r = 0.0;  marker.color.g = 1.0;  marker.color.b = 0.0;
+  // marker.lifetime = ros::Duration(0.4);
+  // marker_pub.publish( marker );
 
   marker.header.frame_id = "map";
   marker.header.stamp = ros::Time();
@@ -861,20 +872,22 @@ void RRT::pf_callback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg) {
   marker.scale.x = 0.4;  marker.scale.y = 0.4;  marker.scale.z = 0.4;
   marker.color.a = 1.0; // Don't forget to set the alpha!
   marker.color.r = 0.0;  marker.color.g = 1.0;  marker.color.b = 0.0;
+  marker.lifetime = ros::Duration(0.4);
   marker_pub.publish( marker );
 
-  marker.header.frame_id = "map";
-  marker.header.stamp = ros::Time();
-  marker.ns = "velo_ball";
-  marker.id = 6;
-  marker.type = visualization_msgs::Marker::SPHERE;
-  marker.action = visualization_msgs::Marker::ADD;
-  marker.pose.position.x = mark_xx[3];  marker.pose.position.y = mark_yy[3];  marker.pose.position.z = 0;
-  marker.pose.orientation.x = 0.0;  marker.pose.orientation.y = 0.0;  marker.pose.orientation.z = 0.0;  marker.pose.orientation.w = 0.0;
-  marker.scale.x = 0.4;  marker.scale.y = 0.4;  marker.scale.z = 0.4;
-  marker.color.a = 1.0; // Don't forget to set the alpha!
-  marker.color.r = 0.0;  marker.color.g = 1.0;  marker.color.b = 0.0;
-  marker_pub.publish( marker );
+  // marker.header.frame_id = "map";
+  // marker.header.stamp = ros::Time();
+  // marker.ns = "velo_ball";
+  // marker.id = 6;
+  // marker.type = visualization_msgs::Marker::SPHERE;
+  // marker.action = visualization_msgs::Marker::ADD;
+  // marker.pose.position.x = mark_xx[3];  marker.pose.position.y = mark_yy[3];  marker.pose.position.z = 0;
+  // marker.pose.orientation.x = 0.0;  marker.pose.orientation.y = 0.0;  marker.pose.orientation.z = 0.0;  marker.pose.orientation.w = 0.0;
+  // marker.scale.x = 0.4;  marker.scale.y = 0.4;  marker.scale.z = 0.4;
+  // marker.color.a = 1.0; // Don't forget to set the alpha!
+  // marker.color.r = 0.0;  marker.color.g = 1.0;  marker.color.b = 0.0;
+  // marker.lifetime = ros::Duration(0.4);
+  // marker_pub.publish( marker );
 
   double L_square = best_x*best_x+best_y*best_y;
   double arc =  2*best_y/L_square;
@@ -924,7 +937,7 @@ void RRT::pf_callback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg) {
 
   drive_pub.publish(drive_msg);
   if(show_obstacles){
-      marker_pub.publish(grid_point);
+      marker_pub.publish(path_line);
     }
   }
 
@@ -994,7 +1007,7 @@ Node RRT::steer(Node &nearest_node, std::vector<double> &sampled_point) {
     Node new_node;
     new_node.x = sampled_point[0];
     new_node.y = sampled_point[1];
-    new_node.cost =nearest_node.cost + sqrt((nearest_node.x - sampled_point[0])*(nearest_node.x - sampled_point[0]) +(nearest_node.y - sampled_point[1]*(nearest_node.y - sampled_point[1])));
+    new_node.cost =nearest_node.cost + sqrt((nearest_node.x - sampled_point[0])*(nearest_node.x - sampled_point[0]) +(nearest_node.y - sampled_point[1])*(nearest_node.y - sampled_point[1]));
     new_node.parent = nearest_node.id;
 
     double p = steer_param;

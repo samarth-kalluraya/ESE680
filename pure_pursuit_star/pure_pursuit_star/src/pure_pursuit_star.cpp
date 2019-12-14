@@ -46,11 +46,12 @@ private:
   double flo_y;
   int flag = 0;
 
-  double L = 0.6 ;  //0.8 works 1.4   1.6
-  double P = 0.22;  //0.21   0.22
-  double understeer_gain = 10;  //0.21   0.22
-  double velocity_gamma = 1;
+  double L = 1 ;  //0.8 works 1.4   1.6   \\ 14 0.8
+  double P = 0.18;  //0.21   0.22
+  double understeer_gain = 14;  //0.21   0.22
+  double velocity_gamma = 0.8;
   vector<float> L_velocity = {0.5,1,1.5,2}; //velocity lookahead distances
+  // vector<float> L_velocity = {0.5}; //velocity lookahead distances
   
   // double L;
   // double P;  
@@ -318,15 +319,17 @@ void pose_callback(const nav_msgs::Odometry::ConstPtr &pose_msg) {
   // }else{
   //   velocity = 0.5; //1
   // }
+  double denominator = 0;
   for(int m=0; m<future_velocities.size(); m++){
     velocity=velocity + pow(velocity_gamma,m)*future_velocities[m];
+    denominator = denominator + pow(velocity_gamma,m);
   }
-  velocity=velocity/future_velocities.size();
+  velocity=velocity/denominator;
   cout<<velocity<<" .....    ";
 
   // understeer aware
   
-  velocity = (velocity - understeer_gain*closest_wp_dis )*0.7;
+  velocity = (velocity - understeer_gain*closest_wp_dis )*0.55  ;
   if(velocity<0.5){
     velocity = 0.5;
   }

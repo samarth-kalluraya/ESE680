@@ -20,8 +20,8 @@ steer_param: 0.6
 steer_param_2: 0.5
 
 #waypoint_path: "/home/samarth/samarth_ws/src/f110-fall2019-skeletons/SLAX_rrt_lab/test.csv"
-waypoint_path: "/home/xinlong/XinlongZheng_ws/src/f110-fall2019-skeletons/rrt/final_processed.csv"
-#waypoint_path: "/home/samarth/samarth_ws/src/f110-fall2019-skeletons/SLAX_rrt_lab/levine_processed.csv"
+#waypoint_path: "/home/xinlong/XinlongZheng_ws/src/f110-fall2019-skeletons/rrt/final_processed.csv"
+waypoint_path: "/home/samarth/samarth_ws/src/f110-fall2019-skeletons/final_project/ESE680/SLAX_rrt_lab/final_processed.csv"
 
 
 #velocity values
