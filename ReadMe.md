@@ -1,1 +1,2 @@
-#F1/10 Autonomous Racing
+# F1/10 Autonomous Racing
+Raceline optimization with understeer aware pure pursuit and RRT*
